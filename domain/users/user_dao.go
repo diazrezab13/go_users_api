@@ -2,6 +2,7 @@ package users
 
 import (
 	"fmt"
+	dateutils "go_users_api/utils/date_utils"
 	"go_users_api/utils/errors"
 )
 
@@ -33,6 +34,8 @@ func (user *User) Save() *errors.RestErr {
 		}
 		return errors.NewBadRequestError(fmt.Sprintf("user %d already exist", user.Id))
 	}
+
+	user.DateCreated = dateutils.GetNowString()
 
 	usersDB[user.Id] = user
 	return nil
