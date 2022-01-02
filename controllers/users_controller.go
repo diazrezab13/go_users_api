@@ -4,6 +4,7 @@ import (
 	"go_users_api/domain/users"
 	"go_users_api/services"
 	"go_users_api/utils/errors"
+	"go_users_api/utils/success"
 	"net/http"
 	"strconv"
 
@@ -29,7 +30,7 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, result)
+	c.JSON(http.StatusCreated, success.NewCreateSuccess("user created succesfully", result))
 }
 
 func GetUser(c *gin.Context) {
@@ -47,7 +48,7 @@ func GetUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	c.JSON(http.StatusOK, success.NewGetUsersSuccess("get user succesfully", *user))
 }
 
 func SearchUser(c *gin.Context) {
