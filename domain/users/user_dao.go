@@ -2,10 +2,16 @@ package users
 
 import (
 	"fmt"
+	"strings"
 
 	"go_users_api/datasources/mysql/users_db"
 	dateutils "go_users_api/utils/date_utils"
 	"go_users_api/utils/errors"
+)
+
+const (
+	indexUniqueEmail = "email %s already exists"
+	queryInsertUser  = "INSERT INTO users (first_name, last_name, email, date_created) VALUES (?, ?, ?, ?);"
 )
 
 var (
@@ -34,17 +40,29 @@ func (user *User) Get() *errors.RestErr {
 
 func (user *User) Save() *errors.RestErr {
 
-	current := usersDB[user.Id]
+	stmt, err := users_db.Client.Prepare(queryInsertUser)
 
-	if current != nil {
-		if current.Email == user.Email {
-			return errors.NewBadRequestError(fmt.Sprintf("email %s already registered", user.Email))
-		}
-		return errors.NewBadRequestError(fmt.Sprintf("user %d already exist", user.Id))
+	if err != nil {
+		return errors.NewInternalServerError(err.Error())
 	}
+	defer stmt.Close()
 
 	user.DateCreated = dateutils.GetNowString()
 
-	usersDB[user.Id] = user
+	insertResult, err := stmt.Exec(user.FirstName, user.LastName, user.Email, user.DateCreated)
+
+	if err != nil {
+		if strings.Contains(err.Error(), "email_UNIQUE") {
+			return errors.NewInternalServerError(fmt.Sprintf(indexUniqueEmail, user.Email))
+		}
+		return errors.NewInternalServerError(fmt.Sprintf("error when trying to save user: %s", err.Error()))
+	}
+
+	userId, err := insertResult.LastInsertId()
+	if err != nil {
+		return errors.NewInternalServerError(fmt.Sprintf("error when trying to save user: %s", err.Error()))
+	}
+
+	user.Id = userId
 	return nil
 }
