@@ -2,6 +2,8 @@ package users
 
 import (
 	"fmt"
+
+	"go_users_api/datasources/mysql/users_db"
 	dateutils "go_users_api/utils/date_utils"
 	"go_users_api/utils/errors"
 )
@@ -11,6 +13,11 @@ var (
 )
 
 func (user *User) Get() *errors.RestErr {
+
+	if err := users_db.Client.Ping(); err != nil {
+		panic(err)
+	}
+
 	result := usersDB[user.Id]
 	if result == nil {
 		return errors.NewNotFoundError(fmt.Sprintf("user %d not found", user.Id))
@@ -26,6 +33,7 @@ func (user *User) Get() *errors.RestErr {
 }
 
 func (user *User) Save() *errors.RestErr {
+
 	current := usersDB[user.Id]
 
 	if current != nil {
